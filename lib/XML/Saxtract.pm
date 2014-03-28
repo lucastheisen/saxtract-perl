@@ -2,6 +2,9 @@
 
 package XML::Saxtract;
 
+# ABSTRACT: Streaming parse XML data into a result hash based upon a specification hash
+# PODNAME: XML::Saxtract
+
 use strict;
 use warnings;
 
@@ -191,3 +194,19 @@ sub start_element {
 }
 
 1;
+
+__END__
+=head1 SYNOPSIS
+
+    use XML::Saxtract;
+
+    my $result = XML::Saxtract::parse_string( $xml, $spec );
+
+=head1 DESCRIPTION
+
+This module provides methods for SAX based (streaming) parsing of XML data into
+a result hash based upon a specification hash.
+
+=head SEE ALSO
+https://github.com/lucastheisen/saxtract-perl
+

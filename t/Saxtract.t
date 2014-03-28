@@ -1,6 +1,6 @@
 use strict;
 use warnings;
-use Test::More tests => 3;
+use Test::More tests => 8;
 use XML::Saxtract;
 
 BEGIN { use_ok('XML::Saxtract') }
@@ -10,7 +10,77 @@ is_deeply(
         "<?xml version='1.0' encoding='UTF-8'?><root>value</root>",
         { '/root' => 'rootValue' }
     ),
-    { rootValue => 'value' } );
+    { rootValue => 'value' },
+    'simple value' );
+
+is_deeply( 
+    XML::Saxtract::parse_string( 
+        "<?xml version='1.0' encoding='UTF-8'?><root id='root' />",
+        { '/root/@id' => 'rootId' }
+    ),
+    { rootId => 'root' },
+    'simple attribute' );
+
+is_deeply( 
+    XML::Saxtract::parse_string( 
+        "<?xml version='1.0' encoding='UTF-8'?><root id='root'>value</root>",
+        { 
+            '/root' => 'rootValue',
+            '/root/@id' => 'rootId' 
+        }
+    ),
+    { 
+        rootValue => 'value',
+        rootId => 'root' 
+    },
+    'simple value and attribute' );
+
+is_deeply( 
+    XML::Saxtract::parse_string( 
+        "<?xml version='1.0' encoding='UTF-8'?><root xmlns='http://abc'>value</root>",
+        { 
+            'http://abc' => 'abc',
+            '/root' => 'rootValue',
+            '/abc:root' => 'abcRootValue' 
+        }
+    ),
+    { 
+        abcRootValue => 'value'
+    },
+    'simple namespaced value' );
+
+is_deeply( 
+    XML::Saxtract::parse_string( 
+        "<?xml version='1.0' encoding='UTF-8'?><root xmlns='http://abc'>value</root>",
+        { 
+            'http://abc' => 'abc',
+            '/root' => 'rootValue',
+            '/abc:root' => sub {
+                my ($object, $value) = @_;
+                $object->{abcRootValue} = $value;
+                $object->{computedValue} = "computed_$value";
+            }
+        }
+    ),
+    { 
+        abcRootValue => 'value',
+        computedValue => 'computed_value'
+    },
+    'subroutine value setter' );
+
+is_deeply( 
+    XML::Saxtract::parse_string( 
+        "<?xml version='1.0' encoding='UTF-8'?><root xmlns:n='http://abc' n:id='root' />",
+        { 
+            'http://abc' => 'abc',
+            '/root/@id' => 'rootId',
+            '/root/@abc:id' => 'abcRootId' 
+        }
+    ),
+    { 
+        abcRootId => 'root'
+    },
+    'mismatching namespace prefixes' );
 
 my $xml = <<XML;
 <?xml version='1.0' encoding='UTF-8'?>
@@ -65,4 +135,5 @@ is_deeply( XML::Saxtract::parse_string( $xml, $spec ),
             name => 'Ali',
             id => 2
         }
-    } );
+    },
+    'complex with namespaces' );
