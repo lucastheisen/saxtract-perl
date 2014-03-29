@@ -8,42 +8,53 @@ package XML::Saxtract;
 use strict;
 use warnings;
 
+use Exporter qw(import);
+our @EXPORT_OK = qw(saxtract_string saxtract_url);
+
+use LWP::UserAgent;
 use XML::Sax;
-use XML::LibXML::SAX;
 
-sub parse_string {
+sub saxtract_string {
     my $xml_string = shift;
-    my $spec = shift;
+    my $spec       = shift;
 
-    my $handler = XML::Saxtract::ContentHandler->new( $spec );
-    my $parser = XML::SAX::ParserFactory->parser( 
-        Handler => $handler );
-    $parser->parse_string( $xml_string );
+    my $handler = XML::Saxtract::ContentHandler->new($spec);
+    my $parser = XML::SAX::ParserFactory->parser( Handler => $handler );
+    $parser->parse_string($xml_string);
 
     return $handler->get_result();
+}
+
+sub saxtract_url {
+    my $uri  = shift;
+    my $spec = shift;
+
+    my $response = LWP::UserAgent->new()->get( $uri );
+    die ( $response ) if ( ! $response->is_success() );
+    return saxtract_string( $response->content(), $spec );
 }
 
 package XML::Saxtract::ContentHandler;
 
 use parent qw(Class::Accessor);
 __PACKAGE__->follow_best_practice;
-__PACKAGE__->mk_ro_accessors( qw(result) );
+__PACKAGE__->mk_ro_accessors(qw(result));
 
 use Data::Dumper;
 
 sub new {
-    my ($class, @args) = @_;
+    my ( $class, @args ) = @_;
     my $self = bless( {}, $class );
 
-    return $self->_init( @args );
+    return $self->_init(@args);
 }
 
 sub _add_value {
     my $object = shift;
-    my $spec = shift;
-    my $value = shift;
+    my $spec   = shift;
+    my $value  = shift;
 
-    my $type = ref( $spec );
+    my $type = ref($spec);
     if ( !$type ) {
         $object->{$spec} = $value;
     }
@@ -59,13 +70,13 @@ sub _add_value {
             if ( !defined( $object->{$name} ) ) {
                 $object->{$name} = [];
             }
-            push( @{$object->{$name}}, $value );
+            push( @{ $object->{$name} }, $value );
         }
         elsif ( $spec->{type} eq 'map' ) {
             if ( !defined( $object->{$name} ) ) {
                 $object->{$name} = {};
             }
-            $object->{$name}{$value->{$spec->{key}}} = $value;
+            $object->{$name}{ $value->{ $spec->{key} } } = $value;
         }
         elsif ( $spec->{type} eq 'first' ) {
             if ( !defined( $object->{$name} ) ) {
@@ -80,40 +91,40 @@ sub _add_value {
 }
 
 sub characters {
-    my ($self, $characters) = @_;
+    my ( $self, $characters ) = @_;
     return if ( $self->{skip} > 0 );
 
-    if ( defined( $characters ) ) {
-        push( @{$self->{buffer}}, $characters->{Data} );
+    if ( defined($characters) ) {
+        push( @{ $self->{buffer} }, $characters->{Data} );
     }
 }
 
 sub end_element {
-    my ($self, $element) = @_;
+    my ( $self, $element ) = @_;
 
     if ( $self->{skip} > 0 ) {
         $self->{skip}--;
         return;
     }
 
-    my $stack_element = pop( @{$self->{element_stack}} );
-    my $name = $stack_element->{name};
-    my $attrs = $stack_element->{attrs};
-    my $spec = $stack_element->{spec};
-    my $path = $stack_element->{spec_path};
-    my $result = $stack_element->{result};
+    my $stack_element = pop( @{ $self->{element_stack} } );
+    my $name          = $stack_element->{name};
+    my $attrs         = $stack_element->{attrs};
+    my $spec          = $stack_element->{spec};
+    my $path          = $stack_element->{spec_path};
+    my $result        = $stack_element->{result};
 
-    if ( defined( $spec->{$path} ) && scalar( @{$self->{buffer}} ) ) {
-        my $buffer_data = join( '', @{$self->{buffer}} );
+    if ( defined( $spec->{$path} ) && scalar( @{ $self->{buffer} } ) ) {
+        my $buffer_data = join( '', @{ $self->{buffer} } );
         $buffer_data =~ s/^\s*//;
         $buffer_data =~ s/\s*$//;
         _add_value( $result, $spec->{$path}, $buffer_data );
     }
 
-    foreach my $attr ( values( %$attrs ) ) {
-        my $ns_uri = $attr->{NamespaceURI};
-        my $attr_path = join( '', $path, '/@',
-            ($ns_uri && $spec->{$ns_uri} ? "$spec->{$ns_uri}:" : ''),
+    foreach my $attr ( values(%$attrs) ) {
+        my $ns_uri    = $attr->{NamespaceURI};
+        my $attr_path = join( '',
+            $path, '/@', ( $ns_uri && $spec->{$ns_uri} ? "$spec->{$ns_uri}:" : '' ),
             $attr->{LocalName} );
 
         if ( $spec->{$attr_path} ) {
@@ -121,32 +132,34 @@ sub end_element {
         }
     }
 
-    if ( !$path && scalar( @{$self->{element_stack}} ) ) {
+    if ( !$path && scalar( @{ $self->{element_stack} } ) ) {
         my $parent_element = $self->{element_stack}[-1];
         my $path_in_parent = "$parent_element->{spec_path}/$name";
-        _add_value( $parent_element->{result}, $parent_element->{spec}{$path_in_parent}, $result );
+        _add_value( $parent_element->{result}, $parent_element->{spec}{$path_in_parent},
+            $result );
     }
 
     $self->{buffer} = [];
 }
 
 sub _init {
-    my ($self, $spec) = @_;
+    my ( $self, $spec ) = @_;
 
-    $self->{result} = {};
-    $self->{element_stack} = [{
-        spec => $spec,
-        spec_path => '',
-        result => $self->{result}
-    }];
+    $self->{result}        = {};
+    $self->{element_stack} = [
+        {   spec      => $spec,
+            spec_path => '',
+            result    => $self->{result}
+        }
+    ];
     $self->{buffer} = [];
-    $self->{skip} = 0;
+    $self->{skip}   = 0;
 
     return $self;
 }
 
 sub start_element {
-    my ($self, $element) = @_;
+    my ( $self, $element ) = @_;
 
     if ( $self->{skip} ) {
         $self->{skip}++;
@@ -154,14 +167,15 @@ sub start_element {
     }
 
     my $stack_top = $self->{element_stack}[-1];
-    my $spec = $stack_top->{spec};
-    my $result = $stack_top->{result};
-    my $uri = $element->{NamespaceURI};
+    my $spec      = $stack_top->{spec};
+    my $result    = $stack_top->{result};
+    my $uri       = $element->{NamespaceURI};
 
     my $qname;
-    if ( $uri ) {
+    if ($uri) {
         my $spec_prefix = $spec->{$uri};
-        if ( !defined( $spec_prefix ) ) {
+        if ( !defined($spec_prefix) ) {
+
             # uri is not in spec, so nothing could possibly match
             $self->{skip} = 1;
             return;
@@ -170,7 +184,7 @@ sub start_element {
             $qname = $element->{LocalName};
         }
         else {
-            $qname = "$spec_prefix:$element->{LocalName}"
+            $qname = "$spec_prefix:$element->{LocalName}";
         }
     }
     else {
@@ -178,19 +192,24 @@ sub start_element {
     }
 
     my $spec_path = "$stack_top->{spec_path}/$qname";
-    if ( defined( $spec->{$spec_path} ) && ref( $spec->{$spec_path} ) eq 'HASH' && defined( $spec->{$spec_path}{spec} ) ) {
-        $spec = $spec->{$spec_path}{spec};
+    if (   defined( $spec->{$spec_path} )
+        && ref( $spec->{$spec_path} ) eq 'HASH'
+        && defined( $spec->{$spec_path}{spec} ) )
+    {
+        $spec      = $spec->{$spec_path}{spec};
         $spec_path = '';
-        $result = {};
+        $result    = {};
     }
 
-    push( @{$self->{element_stack}}, {
-            name => $qname,
-            attrs => $element->{Attributes},
-            spec => $spec,
+    push(
+        @{ $self->{element_stack} },
+        {   name      => $qname,
+            attrs     => $element->{Attributes},
+            spec      => $spec,
             spec_path => $spec_path,
-            result => $result
-        } );
+            result    => $result
+        }
+    );
 }
 
 1;
@@ -198,9 +217,10 @@ sub start_element {
 __END__
 =head1 SYNOPSIS
 
-    use XML::Saxtract;
+    use XML::Saxtract qw(saxtract_string saxtract_uri);
 
-    my $result = XML::Saxtract::parse_string( $xml, $spec );
+    my $result = saxtract_string( $xml, $spec );
+    my $result = saxtract_uri( $uri, $spec );
 
 =head1 DESCRIPTION
 
