@@ -1,0 +1,29 @@
+# NAME
+
+XML::Saxtract - Streaming parse XML data into a result hash based upon a specification hash
+
+# VERSION
+
+version 1.00
+
+# SYNOPSIS
+
+    use XML::Saxtract;
+
+    my $result = XML::Saxtract::parse_string( $xml, $spec );
+
+# DESCRIPTION
+
+This module provides methods for SAX based (streaming) parsing of XML data into
+a result hash based upon a specification hash.
+
+# AUTHOR
+
+Lucas Theisen <lucastheisen@pastdev.com>
+
+# COPYRIGHT AND LICENSE
+
+This software is copyright (c) 2013 by Lucas Theisen.
+
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.
