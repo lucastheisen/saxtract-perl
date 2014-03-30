@@ -1,7 +1,8 @@
 use strict;
 use warnings;
 
-use Test::More tests => 8;
+use File::Temp;
+use Test::More tests => 9;
 use XML::Saxtract qw(saxtract_string saxtract_url);
 
 is_deeply(
@@ -136,6 +137,16 @@ is_deeply(
     'complex with namespaces'
 );
 
+my $temp = File::Temp->new();
+open( my $file_handle, '>', $temp );
+print( $temp $complex_xml );
+close( $temp );
+is_deeply(
+    saxtract_url( 'file://' . $temp->filename(), $complex_spec ),
+    $complex_expected,
+    'file complex with namespaces'
+);
+
 SKIP: {
     eval { require( "Test/HTTP/Server.pm" ); };
     skip( 'Test::HTTP::Server not installed', 1 ) if ( $@ );
@@ -151,3 +162,4 @@ SKIP: {
         'url complex with namespaces'
     );
 }
+

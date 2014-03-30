@@ -28,9 +28,17 @@ sub saxtract_string {
 sub saxtract_url {
     my $uri  = shift;
     my $spec = shift;
+    my $die_on_failure = shift;
 
     my $response = LWP::UserAgent->new()->get( $uri );
-    die ( $response ) if ( ! $response->is_success() );
+    if ( ! $response->is_success() ) {
+        if ( $die_on_failure ) {
+            die( $response );
+        }
+        else {
+            return;
+        }
+    }
     return saxtract_string( $response->content(), $spec );
 }
 
@@ -219,8 +227,45 @@ __END__
 
     use XML::Saxtract qw(saxtract_string saxtract_uri);
 
+    my $xml = "<root id='1' />";
+    my $spec = { '/root/@id' => rootId };
+
     my $result = saxtract_string( $xml, $spec );
-    my $result = saxtract_uri( $uri, $spec );
+    my $rootId = $result->{rootId};
+
+    my $complex_xml = <<'XML';
+    <root xmlns='http://abc' xmlns:d='http://def' d:id='1' name='root' d:other='abc'>
+      <person id='1'>Lucas</person>
+      <d:employee id='2'>Ali</d:employee>
+      <person id='3'>Boo</person>
+      <d:employee id='4'>Dude</d:employee>
+    </root>
+    XML
+
+    # get a map of all the employees
+    my $complex_spec = {
+        'http://def' => 'k',
+        '/root/k:employee' => {
+            name => 'employees',
+            type => 'map',
+            key => 'name',
+            spec => {
+                '' => sub {
+                    my ($object, $value) = @_;
+                    $object->{name} => $value;
+                    $object->{email} => lc($value) . '@example.com';
+                },
+                '/@id' => 'id'
+            }
+        }
+    };
+    my $employees = saxtract_string( $complex_xml, $complex_spec );
+    foreach my $employee ( keys( %$employees ) ) {
+        print( "$employee->{id}: $employee->{name} <$employee->{email}>\n" );
+    }
+    # Prints:
+    # 2: Ali <ali@example.com>
+    # 4: Dude <dude@example.com>
 
 =head1 DESCRIPTION
 
@@ -229,4 +274,5 @@ a result hash based upon a specification hash.
 
 =head SEE ALSO
 https://github.com/lucastheisen/saxtract-perl
+https://github.com/lucastheisen/saxtract
 
