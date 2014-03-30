@@ -259,8 +259,8 @@ __END__
             }
         }
     };
-    my $employees = saxtract_string( $complex_xml, $complex_spec );
-    foreach my $employee ( keys( %$employees ) ) {
+    my $result = saxtract_string( $complex_xml, $complex_spec );
+    foreach my $employee ( keys( %{$result->{employees}} ) ) {
         print( "$employee->{id}: $employee->{name} <$employee->{email}>\n" );
     }
     # Prints:
