@@ -55,6 +55,57 @@ version 1.01
 This module provides methods for SAX based (streaming) parsing of XML data into
 a result hash based upon a specification hash.
 
+# EXPORT\_OK
+
+## saxtract\_string( $xml\_string, $specification, \[%options\] )
+
+Parses the xml\_string according to the specification optionally setting values
+in the result object.  If the result object is not specified, a new empty hash
+is created and a reference to it is returned.
+
+- xml\_string
+
+    A string containing the xml to be parsed.
+
+- specification
+
+    A Saxtract specification hash.
+
+- options
+    - object
+
+        A reference to a hash to load with the results of the parsing.
+
+## saxtract\_url( $url, $specification, \[%options\] )
+
+Parses the xml\_string according to the specification optionally setting values
+in the result object.  If the result object is not specified, a new empty hash
+is created and a reference to it is returned.
+
+- url
+
+    A URL used to locate the XML content.  LWP::UserAgent will be used to retrieve
+    the content from this URL.
+
+- specification
+
+    A Saxtract specification hash.
+
+- options
+    - object
+
+        A reference to a hash to load with the results of the parsing.
+
+    - agent
+
+        If specified, this agent will be used to request the XML, if not, a new
+        LWP::UserAgent will be used.
+
+    - die\_on\_failure
+
+        If true, the request will die on any http response other than 200.  $@ will be
+        set to the HTTP::Response object returned by the request.
+
 # AUTHOR
 
 Lucas Theisen <lucastheisen@pastdev.com>
