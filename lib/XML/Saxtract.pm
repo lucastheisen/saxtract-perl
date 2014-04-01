@@ -17,8 +17,9 @@ use XML::Sax;
 sub saxtract_string {
     my $xml_string = shift;
     my $spec       = shift;
+    my $object     = shift;
 
-    my $handler = XML::Saxtract::ContentHandler->new($spec);
+    my $handler = XML::Saxtract::ContentHandler->new( $spec, $object );
     my $parser = XML::SAX::ParserFactory->parser( Handler => $handler );
     $parser->parse_string($xml_string);
 
@@ -26,8 +27,9 @@ sub saxtract_string {
 }
 
 sub saxtract_url {
-    my $uri  = shift;
-    my $spec = shift;
+    my $uri            = shift;
+    my $spec           = shift;
+    my $object         = shift;
     my $die_on_failure = shift;
 
     my $response = LWP::UserAgent->new()->get( $uri );
@@ -39,7 +41,7 @@ sub saxtract_url {
             return;
         }
     }
-    return saxtract_string( $response->content(), $spec );
+    return saxtract_string( $response->content(), $spec, $object );
 }
 
 package XML::Saxtract::ContentHandler;
@@ -151,9 +153,9 @@ sub end_element {
 }
 
 sub _init {
-    my ( $self, $spec ) = @_;
+    my ( $self, $spec, $result ) = @_;
 
-    $self->{result}        = {};
+    $self->{result}        = $result || {};
     $self->{element_stack} = [
         {   spec      => $spec,
             spec_path => '',
