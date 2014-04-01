@@ -10,7 +10,7 @@ use Exporter qw(import);
 our @EXPORT_OK = qw(saxtract_string saxtract_url);
 
 use LWP::UserAgent;
-use XML::Sax;
+use XML::SAX;
 
 sub saxtract_string {
     my $xml_string = shift;
