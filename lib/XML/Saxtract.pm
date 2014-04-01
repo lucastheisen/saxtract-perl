@@ -2,11 +2,11 @@
 
 package XML::Saxtract;
 
-# ABSTRACT: Streaming parse XML data into a result hash based upon a specification hash
-# PODNAME: XML::Saxtract
-
 use strict;
 use warnings;
+
+# ABSTRACT: Streaming parse XML data into a result hash based upon a specification hash
+# PODNAME: XML::Saxtract
 
 use Exporter qw(import);
 our @EXPORT_OK = qw(saxtract_string saxtract_url);
