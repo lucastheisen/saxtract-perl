@@ -168,6 +168,17 @@ sub _init {
     return $self;
 }
 
+sub _spec_prefix {
+    my ($self, $uri) = @_;
+
+    for (my $i = scalar(@{$self->{element_stack}}) - 1; $i >= 0; $i--) {
+        my $spec_prefix = $self->{element_stack}[$i]->{spec}{$uri};
+        return $spec_prefix if (defined($spec_prefix));
+    }
+
+    return;
+}
+
 sub start_element {
     my ( $self, $element ) = @_;
 
@@ -183,7 +194,7 @@ sub start_element {
 
     my $qname;
     if ($uri) {
-        my $spec_prefix = $spec->{$uri};
+        my $spec_prefix = $self->_spec_prefix($uri);
         if ( !defined($spec_prefix) ) {
 
             # uri is not in spec, so nothing could possibly match

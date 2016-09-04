@@ -4,7 +4,7 @@ XML::Saxtract - Streaming parse XML data into a result hash based upon a specifi
 
 # VERSION
 
-version 1.01
+version 1.02
 
 # SYNOPSIS
 

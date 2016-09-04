@@ -2,7 +2,7 @@ use strict;
 use warnings;
 
 use File::Temp;
-use Test::More tests => 9;
+use Test::More tests => 10;
 use XML::Saxtract qw(saxtract_string saxtract_url);
 
 is_deeply(
@@ -160,6 +160,55 @@ SKIP: {
         saxtract_url( $server->uri() . 'complex', $complex_spec ),
         $complex_expected,
         'url complex with namespaces'
+    );
+}
+
+{
+    #subspec namespace
+    my $xml = <<'    XML';
+    <root xmlns='urn:abc' xmlns:foo='urn:bar' xmlns:baz='urn:bop'>
+      <person><baz:id>1</baz:id><foo:name>Lucas</foo:name></person>
+      <person><baz:id>3</baz:id><foo:name>Boo</foo:name></person>
+    </root>
+    XML
+    my $spec = {
+        'urn:abc'     => '',
+        '/root' => {
+            type => 'first',
+            name => 'root',
+            spec => {
+                'urn:bar'   => 'f',
+                '/person'   => {
+                    name => 'people',
+                    type => 'array',
+                    spec => {
+                        'urn:bop' => '',
+                        '/f:name' => 'name',
+                        '/id'     => 'id'
+                    }
+                }
+            }
+        }
+    };
+    my $expected = {   
+        root => {
+            people => [
+                {
+                    name => 'Lucas',
+                    id   => 1
+                },
+                {
+                    name => 'Boo',
+                    id   => 3
+                }
+            ]
+        }
+    };
+
+    is_deeply(
+        saxtract_string( $xml, $spec ),
+        $expected,
+        'subspec namespaces'
     );
 }
 
