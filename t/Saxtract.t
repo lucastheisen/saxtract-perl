@@ -2,7 +2,7 @@ use strict;
 use warnings;
 
 use File::Temp;
-use Test::More tests => 10;
+use Test::More tests => 11;
 use XML::Saxtract qw(saxtract_string saxtract_url);
 
 is_deeply(
@@ -212,3 +212,44 @@ SKIP: {
     );
 }
 
+{
+    #subspec type sub
+    my $xml = <<'    XML';
+    <root>
+      <person><id>1</id><name>Lucas</name></person>
+      <person><id>3</id><name>Boo</name></person>
+    </root>
+    XML
+    my $spec = {
+        '/root/person' => {
+            name => 'people',
+            type => sub {
+                my ( $object, $value ) = @_;
+                $object->{"$value->{name}|$value->{id}"} = $value;
+            },
+            spec => {
+                '/name' => 'name',
+                '/id'     => 'id'
+            }
+        }
+    };
+    my $expected = {   
+        people => { 
+            'Lucas|1' => {
+                name => 'Lucas',
+                id   => 1
+            },
+            'Boo|3' => {
+                name => 'Boo',
+                id   => 3
+            }
+        }
+    };
+
+    is_deeply(
+        saxtract_string( $xml, $spec ),
+        $expected,
+        'subspec type sub'
+    );
+
+}

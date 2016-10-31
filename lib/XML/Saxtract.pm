@@ -76,7 +76,18 @@ sub _add_value {
     }
     else {
         my $name = $spec->{name};
-        if ( $spec->{type} eq 'array' ) {
+        my $subspec_type = ref($spec->{type});
+        if ( $subspec_type ) {
+            if( $subspec_type eq 'CODE' ) {
+                my $subspec_object = $object->{$name};
+                unless ( $subspec_object ) {
+                    $subspec_object = {};
+                    $object->{$name} = $subspec_object;
+                }
+                &{$spec->{type}}( $subspec_object, $value );
+            }
+        }
+        elsif ( $spec->{type} eq 'array' ) {
             if ( !defined( $object->{$name} ) ) {
                 $object->{$name} = [];
             }
@@ -255,6 +266,43 @@ __END__
     </root>
     XML
 
+    # get a list of all the people
+    my $complex_spec = {
+        'http://def' => 'k',
+        '/root/person' => {
+            name => 'first_person',
+            type => 'first',
+            spec => {
+                '' => 'name',
+                '/@id' => 'id'
+            }
+        }
+    };
+    my $result = saxtract_string( $complex_xml, $complex_spec );
+    print( "$result->{first_person}{id}: $result->{first_person}{name}\n" );
+    # Prints:
+    # 1: Lucas
+
+    # get a list of all the people
+    my $complex_spec = {
+        'http://def' => 'k',
+        '/root/person' => {
+            name => 'people',
+            type => 'list',
+            spec => {
+                '' => 'name',
+                '/@id' => 'id'
+            }
+        }
+    };
+    my $result = saxtract_string( $complex_xml, $complex_spec );
+    foreach my $person ( @{$result->{people}} ) {
+        print( "$person->{id}: $person->{name}\n" );
+    }
+    # Prints:
+    # 1: Lucas
+    # 3: Boo
+
     # get a map of all the employees
     my $complex_spec = {
         'http://def' => 'k',
@@ -273,12 +321,39 @@ __END__
         }
     };
     my $result = saxtract_string( $complex_xml, $complex_spec );
-    foreach my $employee ( keys( %{$result->{employees}} ) ) {
+    foreach my $employee ( values( %{$result->{employees}} ) ) {
         print( "$employee->{id}: $employee->{name} <$employee->{email}>\n" );
     }
     # Prints:
     # 2: Ali <ali@example.com>
     # 4: Dude <dude@example.com>
+
+    # get a map of all the employees generating a compound key
+    my $complex_spec = {
+        'http://def' => 'k',
+        '/root/k:employee' => {
+            name => 'employees',
+            type => sub {
+                my ( $object, $value ) = @_;
+                $object->{"$value->{id}|$value->{name}"} = $value;
+            },
+            spec => {
+                '' => sub {
+                    my ($object, $value) = @_;
+                    $object->{name} => $value;
+                    $object->{email} => lc($value) . '@example.com';
+                },
+                '/@id' => 'id'
+            }
+        }
+    };
+    my $result = saxtract_string( $complex_xml, $complex_spec );
+    foreach my $compound_key ( keys( %{$result->{employees}} ) ) {
+        print( "$compound_key: <$result->{employees}{$compund_key}{email}>\n" );
+    }
+    # Prints:
+    # 2|Ali: <ali@example.com>
+    # 4|Dude: <dude@example.com>
 
 =head1 DESCRIPTION
 
