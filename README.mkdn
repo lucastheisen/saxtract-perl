@@ -4,7 +4,7 @@ XML::Saxtract - Streaming parse XML data into a result hash based upon a specifi
 
 # VERSION
 
-version 1.02
+version 1.03
 
 # SYNOPSIS
 
@@ -25,6 +25,43 @@ version 1.02
     </root>
     XML
 
+    # get a list of all the people
+    my $complex_spec = {
+        'http://def' => 'k',
+        '/root/person' => {
+            name => 'first_person',
+            type => 'first',
+            spec => {
+                '' => 'name',
+                '/@id' => 'id'
+            }
+        }
+    };
+    my $result = saxtract_string( $complex_xml, $complex_spec );
+    print( "$result->{first_person}{id}: $result->{first_person}{name}\n" );
+    # Prints:
+    # 1: Lucas
+
+    # get a list of all the people
+    my $complex_spec = {
+        'http://def' => 'k',
+        '/root/person' => {
+            name => 'people',
+            type => 'list',
+            spec => {
+                '' => 'name',
+                '/@id' => 'id'
+            }
+        }
+    };
+    my $result = saxtract_string( $complex_xml, $complex_spec );
+    foreach my $person ( @{$result->{people}} ) {
+        print( "$person->{id}: $person->{name}\n" );
+    }
+    # Prints:
+    # 1: Lucas
+    # 3: Boo
+
     # get a map of all the employees
     my $complex_spec = {
         'http://def' => 'k',
@@ -43,12 +80,39 @@ version 1.02
         }
     };
     my $result = saxtract_string( $complex_xml, $complex_spec );
-    foreach my $employee ( keys( %{$result->{employees}} ) ) {
+    foreach my $employee ( values( %{$result->{employees}} ) ) {
         print( "$employee->{id}: $employee->{name} <$employee->{email}>\n" );
     }
     # Prints:
     # 2: Ali <ali@example.com>
     # 4: Dude <dude@example.com>
+
+    # get a map of all the employees generating a compound key
+    my $complex_spec = {
+        'http://def' => 'k',
+        '/root/k:employee' => {
+            name => 'employees',
+            type => sub {
+                my ( $object, $value ) = @_;
+                $object->{"$value->{id}|$value->{name}"} = $value;
+            },
+            spec => {
+                '' => sub {
+                    my ($object, $value) = @_;
+                    $object->{name} => $value;
+                    $object->{email} => lc($value) . '@example.com';
+                },
+                '/@id' => 'id'
+            }
+        }
+    };
+    my $result = saxtract_string( $complex_xml, $complex_spec );
+    foreach my $compound_key ( keys( %{$result->{employees}} ) ) {
+        print( "$compound_key: <$result->{employees}{$compund_key}{email}>\n" );
+    }
+    # Prints:
+    # 2|Ali: <ali@example.com>
+    # 4|Dude: <dude@example.com>
 
 # DESCRIPTION
 
