@@ -266,7 +266,7 @@ __END__
     </root>
     XML
 
-    # get a list of all the people
+    # get the first person
     my $complex_spec = {
         'http://def' => 'k',
         '/root/person' => {

@@ -25,7 +25,7 @@ version 1.03
     </root>
     XML
 
-    # get a list of all the people
+    # get the first person
     my $complex_spec = {
         'http://def' => 'k',
         '/root/person' => {
