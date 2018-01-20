@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/lucastheisen/saxtract-perl.svg?branch=master)](https://travis-ci.org/lucastheisen/saxtract-perl)
+
 # NAME
 
 XML::Saxtract - Streaming parse XML data into a result hash based upon a specification hash
