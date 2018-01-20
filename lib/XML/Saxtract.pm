@@ -283,12 +283,12 @@ __END__
     # Prints:
     # 1: Lucas
 
-    # get a list of all the people
+    # get a array of all the people
     my $complex_spec = {
         'http://def' => 'k',
         '/root/person' => {
             name => 'people',
-            type => 'list',
+            type => 'array',
             spec => {
                 '' => 'name',
                 '/@id' => 'id'
