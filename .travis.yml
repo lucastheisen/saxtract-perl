@@ -1,0 +1,16 @@
+language: perl
+perl:
+- "5.24"
+- "5.22"
+- "5.20"
+
+before_install:
+- sudo apt-get update -q
+- cpanm -v --notest Dist::Zilla
+
+install:
+- dzil authordeps | cpanm -v --notest
+- dzil listdeps | cpanm -v --notest
+
+script:
+- dzil build
