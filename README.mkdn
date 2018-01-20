@@ -4,7 +4,7 @@ XML::Saxtract - Streaming parse XML data into a result hash based upon a specifi
 
 # VERSION
 
-version 1.03
+version 1.04
 
 # SYNOPSIS
 
@@ -42,12 +42,12 @@ version 1.03
     # Prints:
     # 1: Lucas
 
-    # get a list of all the people
+    # get a array of all the people
     my $complex_spec = {
         'http://def' => 'k',
         '/root/person' => {
             name => 'people',
-            type => 'list',
+            type => 'array',
             spec => {
                 '' => 'name',
                 '/@id' => 'id'

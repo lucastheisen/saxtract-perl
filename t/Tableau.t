@@ -6,8 +6,7 @@ use Test::More tests => 2;
 use XML::Saxtract qw(saxtract_string);
 
 is_deeply(
-    saxtract_string(q[
-<?xml version='1.0' encoding='UTF-8'?>
+    saxtract_string(q[<?xml version='1.0' encoding='UTF-8'?>
 <tsResponse xmlns="http://tableau.com/api" 
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
   xsi:schemaLocation="http://tableau.com/api http://tableau.com/api/ts-api-2.2.xsd">
@@ -98,8 +97,7 @@ is_deeply(
     'tableau stuff');
 
 is_deeply(
-    saxtract_string(q[
-<?xml version='1.0' encoding='UTF-8'?>
+    saxtract_string(q[<?xml version='1.0' encoding='UTF-8'?>
 <tsResponse xmlns="http://tableau.com/api" 
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
   xsi:schemaLocation="http://tableau.com/api http://tableau.com/api/ts-api-2.2.xsd">
